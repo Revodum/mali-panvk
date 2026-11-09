@@ -51,7 +51,11 @@ jobs:
           sdkmanager --install "ndk;29.0.14206865"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
 
-      - name: Build and package PanVK
+      - name: Build PanVK with Android handle fallback only
+        env:
+          GRALLOC: "0"
+          BUILD_DIR: build-android-fallback
+          PANVK_PACKAGE_VARIANT: handle-fallback
         run: ./build.sh
 
       - name: Verify package contents
