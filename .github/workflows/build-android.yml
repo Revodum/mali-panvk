@@ -48,7 +48,6 @@ jobs:
       - name: Accept Android SDK licenses and install NDK
         shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null
           sdkmanager --install "ndk;29.0.14206865"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
 
