@@ -66,14 +66,18 @@ def main():
     commit = git('rev-parse', '--short', 'HEAD')
     count = git('rev-list', '--count', 'HEAD') or '1'
     suffix = '-' + commit if commit else ''
+    variant = os.environ.get('PANVK_PACKAGE_VARIANT', '').strip()
+    variant_suffix = '-' + re.sub(r'[^A-Za-z0-9_-]', '', variant) if variant else ''
+    variant_label = ' [' + variant + ']' if variant else ''
 
     meta = {
         'schemaVersion': 1,
         # Launchers (Winlator, Bannerlator) install a driver into a directory named after this:
         # no path separators, or the install is left behind as "tmp".
-        'name': 'PanVK Mali Bifrost and Valhall (kbase) (Mesa %s%s)' % (mesa_version, suffix),
-        'description': 'PanVK for Mali Bifrost and Valhall GPUs on the stock Arm kbase kernel '
-                       'driver, based on Mesa %s.' % mesa_version,
+        'name': 'PanVK Mali Bifrost and Valhall (kbase) (Mesa %s%s)%s' % (mesa_version, suffix, variant_label),
+        'description': ('PanVK for Mali Bifrost and Valhall GPUs on the stock Arm kbase kernel '
+                        'driver, based on Mesa %s.' % mesa_version) +
+                       (' Uses the Android native-handle fallback instead of libui Gralloc.' if variant == 'handle-fallback' else ''),
         'author': 'JimVulkan',
         'packageVersion': count,
         'vendor': 'Mesa',
@@ -83,7 +87,7 @@ def main():
     }
 
     os.makedirs(out_dir, exist_ok=True)
-    zip_path = os.path.join(out_dir, 'mali-panvk-%s%s.zip' % (mesa_version, suffix))
+    zip_path = os.path.join(out_dir, 'mali-panvk-%s%s%s.zip' % (mesa_version, suffix, variant_suffix))
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
         z.writestr('meta.json', json.dumps(meta, indent=2) + '\n')
         z.write(lib, 'libvulkan_panfrost.so')
