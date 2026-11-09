@@ -1,0 +1,77 @@
+name: Build Android PanVK driver
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - doogee-blade-gt-panvk
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'android/**'
+      - 'build.sh'
+      - 'meson.build'
+      - 'meson_options.txt'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: panvk-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android-arm64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install host build dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget software-properties-common gnupg
+          wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 21
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-21 llvm-21-dev libclang-21-dev libclc-21-dev \
+            libllvmspirvlib-21-dev glslang-tools pkg-config python3-pip \
+            python3-mako python3-packaging python3-yaml
+
+      - name: Install Meson and Ninja
+        run: python3 -m pip install --break-system-packages 'meson>=1.4.0' ninja
+
+      - name: Install Android NDK r29
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses and install NDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager --install "ndk;29.0.14206865"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
+
+      - name: Build and package PanVK
+        run: ./build.sh
+
+      - name: Verify package contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          zips=(dist/*.zip)
+          test "${#zips[@]}" -eq 1
+          unzip -l "${zips[0]}"
+          unzip -p "${zips[0]}" meta.json
+          unzip -t "${zips[0]}"
+
+      - name: Upload installable driver ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: panvk-android-arm64
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
