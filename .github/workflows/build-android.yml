@@ -51,11 +51,11 @@ jobs:
           sdkmanager --install "ndk;29.0.14206865"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
 
-      - name: Build PanVK with Android handle fallback only
+      - name: Build PanVK with Android IMapper gralloc backend
         env:
-          GRALLOC: "0"
-          BUILD_DIR: build-android-fallback
-          PANVK_PACKAGE_VARIANT: handle-fallback
+          GRALLOC: "1"
+          BUILD_DIR: build-android-gralloc
+          PANVK_PACKAGE_VARIANT: imapper-gralloc
         run: ./build.sh
 
       - name: Verify package contents
